@@ -5,6 +5,8 @@
 #
 #
 
+# all divide operation will result in float number
+from __future__ import division
 import math, os, pickle, re
 
 class Bayes_Classifier:
@@ -14,27 +16,29 @@ class Bayes_Classifier:
         cache of a trained classifier has been stored, it loads this cache.  Otherwise, 
         the system will proceed through training.  After running this method, the classifier 
         is ready to classify input text."""
-        self.class_dict = {}
-        self.word_dict = {}
+        class_dict = {}
+        self.positive_word = {}
+        self.negative_word = {}
         if os.path.exists("positive_word.pickle")and os.path.exists("negative_word.pickle") and os.path.exists("class_dict.pickle"):
-            print "inside exists"
-            self.class_dict = self.load("class_dict.pickle")
+            class_dict = self.load("class_dict.pickle")
             self.positive_word = self.load("positive_word.pickle")
             self.negative_word = self.load("negative_word.pickle")
         else:
-            print "inside train"
-            self.class_dict, self.positive_word, self.negative_word = self.train()
+            class_dict, self.positive_word, self.negative_word = self.train()
 
-        #print self.class_dict
-        #print self.positive_word
-        #print self.negative_word
+        self.pos_num = class_dict["positive"]
+        self.neg_num = class_dict["negative"]
+        self.total_num = self.pos_num + self.neg_num
+
+        self.prob_pos = self.pos_num / self.total_num
+        self.prob_neg = self.neg_num / self.total_num
 
     def train(self):   
         """Trains the Naive Bayes Sentiment Classifier."""
         file_list = []
         directory = ""
 
-        for item in os.walk("./test_dir/"):
+        for item in os.walk("./movies_reviews/"):
             file_list = item[2]
             directory = item[0]
             break
@@ -43,9 +47,12 @@ class Bayes_Classifier:
         class_dict["positive"] = 0
         class_dict["negative"] = 0
         for file in file_list:
+            if file == ".DS_Store":
+                continue
             dot_index = file.index('.')
             file = file[:dot_index]
             splits = file.split('-')
+            #print splits
             if splits[1] == '5':
                 class_dict["positive"] +=1
             else:

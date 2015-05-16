@@ -10,3 +10,6 @@ pa4/evaluation.txt
 # data
 pa4/movies_reviews
 pa3/input_puzzles
+
+# pickle file
+*.pickle
