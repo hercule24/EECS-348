@@ -1,0 +1,12 @@
+# system config junk file
+.DS_Store
+.DS_Store?
+*.swp
+*.pyc
+
+# evaluation file
+pa4/evaluation.txt
+
+# data
+pa4/movies_reviews
+pa3/input_puzzles
