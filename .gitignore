@@ -13,3 +13,6 @@ pa3/input_puzzles
 
 # pickle file
 *.pickle
+
+# test_dir
+pa4/test_dir
