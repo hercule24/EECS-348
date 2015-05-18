@@ -8,6 +8,7 @@
 # all divide operation will result in float number
 from __future__ import division
 from math import log
+from porter2 import stem
 import math, os, pickle, re
 
 def unique(words):
@@ -194,17 +195,19 @@ class Bayes_Classifier:
         lTokens = []
         sToken = ""
         for c in sText:
-           if re.match("[a-zA-Z0-9]", str(c)) != None or c == "\"" or c == "_" or c == "-":
-              sToken += c
-           else:
-              if sToken != "":
-                 lTokens.append(sToken)
-                 sToken = ""
-              if c.strip() != "":
-                 lTokens.append(str(c.strip()))
+            if re.match("[A-Z]", str(c)) != None:
+                sToken += c.lower()
+            elif re.match("[a-z0-9]", str(c)) != None or c == "\"" or c == "_" or c == "-":
+                sToken += c
+            else:
+               if sToken != "":
+                    lTokens.append(sToken)
+                    sToken = ""
+               if c.strip() != "":
+                    lTokens.append(str(c.strip()))
                  
         if sToken != "":
-           lTokens.append(sToken)
+            lTokens.append(sToken)
 
         return lTokens
 
@@ -214,3 +217,4 @@ if __name__ == "__main__":
     print c.classify(text)
     text = c.loadFile("./test_dir/movies-5-110.txt")
     print c.classify(text)
+    print c.classify("This is my favorite movie!")
