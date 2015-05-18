@@ -194,19 +194,17 @@ class Bayes_Classifier:
         lTokens = []
         sToken = ""
         for c in sText:
-            if re.match("[A-Z]", str(c)) != None:
-                sToken += c.lower()
-            elif re.match("[a-z0-9]", str(c)) != None or c == "\"" or c == "_" or c == "-":
-                sToken += c
-            else:
-               if sToken != "":
-                    lTokens.append(sToken)
-                    sToken = ""
-               if c.strip() != "":
-                    lTokens.append(str(c.strip()))
+           if re.match("[a-zA-Z0-9]", str(c)) != None or c == "\"" or c == "_" or c == "-":
+              sToken += c
+           else:
+              if sToken != "":
+                 lTokens.append(sToken)
+                 sToken = ""
+              if c.strip() != "":
+                 lTokens.append(str(c.strip()))
                  
         if sToken != "":
-            lTokens.append(sToken)
+           lTokens.append(sToken)
 
         return lTokens
 
