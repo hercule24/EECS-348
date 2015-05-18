@@ -112,12 +112,14 @@ class Bayes_Classifier:
 
             if splits[1] == '5':
                 for word in tokens:
+                    word = stem(word)
                     if word not in positive_word:
                         positive_word[word] = 1
                     else:
                         positive_word[word] += 1
             else:
                 for word in tokens:
+                    word = stem(word)
                     if word not in negative_word:
                         negative_word[word] = 1
                     else:
@@ -141,6 +143,7 @@ class Bayes_Classifier:
     
         for c in self.class_dict:
             for word in tokens:
+                word = stem(word)
                 p = None
                 if c == "positive":
                     if word in self.positive_word:
