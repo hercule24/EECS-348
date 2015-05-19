@@ -9,7 +9,7 @@
 from __future__ import division
 from math import log
 from porter2 import stem
-import math, os, pickle, re
+import math, os, pickle, re, sys
 
 def unique(words):
     i = 0
@@ -28,20 +28,21 @@ def unique(words):
 
 class Bayes_Classifier:
 
-    def __init__(self):
+    def __init__(self, file_list, num, directory):
         """This method initializes and trains the Naive Bayes Sentiment Classifier.  If a 
         cache of a trained classifier has been stored, it loads this cache.  Otherwise, 
         the system will proceed through training.  After running this method, the classifier 
         is ready to classify input text."""
+
         self.class_dict = {}
         self.positive_word = {}
         self.negative_word = {}
-        if os.path.exists("positive_word.pickle")and os.path.exists("negative_word.pickle") and os.path.exists("class_dict.pickle"):
-            self.class_dict = self.load("class_dict.pickle")
-            self.positive_word = self.load("positive_word.pickle")
-            self.negative_word = self.load("negative_word.pickle")
+        if os.path.exists("positive_word" + str(num) + ".pickle") and os.path.exists("negative_word" + str(num) + ".pickle") and os.path.exists("class_dict" + str(num) + ".pickle"):
+            self.class_dict = self.load("class_dict" + str(num) + ".pickle")
+            self.positive_word = self.load("positive_word" + str(num) + ".pickle")
+            self.negative_word = self.load("negative_word" + str(num) + ".pickle")
         else:
-            self.class_dict, self.positive_word, self.negative_word = self.train() 
+            self.class_dict, self.positive_word, self.negative_word = self.train(file_list, num, directory)
 
 
         self.pos_num = self.class_dict["positive"]
@@ -72,15 +73,16 @@ class Bayes_Classifier:
         #print self.pos_word_count
         #print self.neg_word_count
 
-    def train(self):   
+    def train(self, file_list, num, directory):
         """Trains the Naive Bayes Sentiment Classifier."""
-        file_list = []
-        directory = ""
+        #file_list = []
+        #directory = ""
 
-        for item in os.walk("./movies_reviews/"):
-            file_list = item[2]
-            directory = item[0]
-            break
+        #for item in os.walk("./movies_reviews/"):
+        #    file_list = item[2]
+        #    directory = item[0]
+        #    break
+        #print "inside training"
         
         class_dict = {}
         class_dict["positive"] = 0
@@ -125,9 +127,9 @@ class Bayes_Classifier:
                     else:
                         negative_word[word] += 1
 
-        self.save(class_dict, "class_dict.pickle")
-        self.save(positive_word, "positive_word.pickle")
-        self.save(negative_word, "negative_word.pickle")
+        self.save(class_dict, "class_dict" + str(num) + ".pickle")
+        self.save(positive_word, "positive_word" + str(num) + ".pickle")
+        self.save(negative_word, "negative_word" + str(num) + ".pickle")
 
         return class_dict, positive_word, negative_word
      
@@ -214,10 +216,53 @@ class Bayes_Classifier:
 
         return lTokens
 
+    def calAccuracy(self, test_file, directory):
+        correct = 0
+        for file in test_file:
+            if file == ".DS_Store":
+                continue
+            sTxt = self.loadFile(directory + file)
+            c = self.classify(sTxt)
+            
+            dot_index = file.index('.')
+            file_string = file[:dot_index]
+            splits = file_string.split("-")
+
+            if splits[1] == '5' and c == "positive":
+                correct += 1
+            if splits[1] == '1' and c == "negative":
+                correct += 1
+        print correct / len(test_file)
+            
+            
+
 if __name__ == "__main__":
-    c = Bayes_Classifier()
-    text = c.loadFile("./test_dir/movies-1-11508.txt")
-    print c.classify(text)
-    text = c.loadFile("./test_dir/movies-5-110.txt")
-    print c.classify(text)
-    print c.classify("This is my favorite movie!")
+    if len(sys.argv) == 1:
+        print "Usage:"
+        print "./bayesbest.py: Using all data as training data, and testing data"
+        print "./bayesbest.py -c    : Using 10 fold cross validation"
+        print
+
+    file_list = []
+    directory = ""
+    for item in os.walk("./movies_reviews/"):
+        file_list = item[2]
+        directory = item[0]
+        break
+
+    print "Using all data as testing data"
+    c_a = Bayes_Classifier(file_list, 10, directory)
+    #print "after training"
+    c_a.calAccuracy(file_list, directory)
+    print
+
+    div = int(len(file_list) / 10)
+    if len(sys.argv) == 2 and sys.argv[1] == "-c":
+        for i in range(10):
+            print "Using " + str(i) + "th fold as testing data"
+            train_file = file_list[i*div+div:]
+            train_file = train_file + file_list[:i*div]
+            test_file = file_list[i*div: i*div + div]
+            c = Bayes_Classifier(train_file, i, directory)
+            c.calAccuracy(test_file, directory)
+            print

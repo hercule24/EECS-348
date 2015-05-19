@@ -32,6 +32,14 @@ class Bayes_Classifier:
         cache of a trained classifier has been stored, it loads this cache.  Otherwise, 
         the system will proceed through training.  After running this method, the classifier 
         is ready to classify input text."""
+        self.file_list = []
+        self.directory = ""
+
+        for item in os.walk("./movies_reviews/"):
+            self.file_list = item[2]
+            self.directory = item[0]
+            break
+
         self.class_dict = {}
         self.positive_word = {}
         self.negative_word = {}
@@ -73,18 +81,11 @@ class Bayes_Classifier:
 
     def train(self):   
         """Trains the Naive Bayes Sentiment Classifier."""
-        file_list = []
-        directory = ""
-
-        for item in os.walk("./movies_reviews/"):
-            file_list = item[2]
-            directory = item[0]
-            break
         
         class_dict = {}
         class_dict["positive"] = 0
         class_dict["negative"] = 0
-        for file in file_list:
+        for file in self.file_list:
             if file == ".DS_Store":
                 continue
             dot_index = file.index('.')
@@ -100,12 +101,12 @@ class Bayes_Classifier:
         positive_word = {}
         negative_word = {}
 
-        for file in file_list:
+        for file in self.file_list:
             dot_index = file.index('.')
             file_string = file[:dot_index]
             splits = file_string.split('-')
 
-            file_name = directory + file
+            file_name = self.directory + file
             sTxt = self.loadFile(file_name)
             tokens = self.tokenize(sTxt)
 
@@ -208,10 +209,31 @@ class Bayes_Classifier:
 
         return lTokens
 
+    def calAccuracy(self):
+        correct = 0
+        for file in self.file_list:
+            if file == ".DS_Store":
+                continue
+            sTxt = self.loadFile(self.directory + file)
+            c = self.classify(sTxt)
+
+            dot_index = file.index('.')
+            file_string = file[:dot_index]
+            splits = file_string.split("-")
+
+            if splits[1] == '5' and c == "positive":
+                correct += 1
+            if splits[1] == '1' and c == "negative":
+                correct += 1
+        print correct / len(self.file_list)
+
+
+
 if __name__ == "__main__":
     c = Bayes_Classifier()
-    text = c.loadFile("./test_dir/movies-1-11508.txt")
-    print c.classify(text)
-    text = c.loadFile("./test_dir/movies-5-110.txt")
-    print c.classify(text)
-    print c.classify("I hate raining!")
+    #text = c.loadFile("./test_dir/movies-1-11508.txt")
+    #print c.classify(text)
+    #text = c.loadFile("./test_dir/movies-5-110.txt")
+    #print c.classify(text)
+    #print c.classify("I hate raining!")
+    c.calAccuracy()
