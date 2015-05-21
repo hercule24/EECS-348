@@ -225,7 +225,7 @@ class Bayes_Classifier:
 if __name__ == "__main__":
     if len(sys.argv) == 1:
         print "Usage:"
-        print "./bayesbest.py: Using all data as training data, and testing data"
+        print "./bayesbest.py       : Using all data as training data, and testing data"
         print "./bayesbest.py -c    : Using 10 fold cross validation"
         print
 
@@ -240,11 +240,11 @@ if __name__ == "__main__":
         print "Using all data as testing data"
         c_a = Bayes_Classifier(file_list, directory)
         #print "after training"
-        c_a.calAccuracy(file_list, directory)
-        print
+        accuracy = c_a.calAccuracy(file_list, directory)
+        print "accuracy =", accuracy
 
-    average_accuracy = 0
     if len(sys.argv) == 2 and sys.argv[1] == "-c":
+        average_accuracy = 0
         div = int(len(file_list) / 10)
         shuffle(file_list)
         for i in range(10):
@@ -259,4 +259,4 @@ if __name__ == "__main__":
             average_accuracy += accuracy
             print "%d seconds passed" % (time.time() - t1)
             print
-    print "average_accuracy =", average_accuracy / 10
+        print "average_accuracy =", average_accuracy / 10
