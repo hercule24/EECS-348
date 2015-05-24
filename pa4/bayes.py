@@ -204,8 +204,20 @@ class Bayes_Classifier:
 
         return lTokens
 
-    def calAccuracy(self, file_list, calAccuracy):
+    def calAccuracy(self, file_list, directory):
         correct = 0
+        # actual num of class examples
+        pos_num = 0
+        neg_num = 0
+
+        # num of correctly classified examples
+        pos_correct = 0
+        neg_correct = 0
+        
+        # num of total classified examples
+        pos_fake_num = 0
+        neg_fake_num = 0
+
         for file in file_list:
             if file == ".DS_Store":
                 continue
@@ -216,11 +228,31 @@ class Bayes_Classifier:
             file_string = file[:dot_index]
             splits = file_string.split("-")
 
-            if splits[1] == '5' and c == "positive":
-                correct += 1
-            if splits[1] == '1' and c == "negative":
-                correct += 1
-        return correct / len(file_list)
+            if splits[1] == '5':
+                pos_num += 1
+            if splits[1] == '1':
+                neg_num += 1
+
+            if c == "positive":
+                pos_fake_num += 1
+                if splits[1] == '5':
+                    correct += 1
+                    pos_correct += 1
+            
+            if c == "negative":
+                neg_fake_num += 1
+                if splits[1] == '1':
+                    correct += 1
+                    neg_correct += 1
+
+        accuracy = correct / len(file_list)
+        pos_precision = pos_correct / pos_fake_num
+        pos_recall = pos_correct / pos_num
+        f_pos = 2 * pos_precision * pos_recall / (pos_precision + pos_recall)
+        neg_precision = neg_correct / neg_fake_num
+        neg_recall = neg_correct / neg_num
+        f_neg = 2 * neg_precision * neg_recall / (neg_precision + neg_recall)
+        return accuracy, (pos_precision, pos_recall, f_pos), (neg_precision, neg_recall, f_neg)
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
@@ -240,11 +272,23 @@ if __name__ == "__main__":
         print "Using all data as testing data"
         c_a = Bayes_Classifier(file_list, directory)
         #print "after training"
-        accuracy = c_a.calAccuracy(file_list, directory)
-        print "accuracy =", accuracy
+        accuracy, pos_tuple, neg_tuple = c_a.calAccuracy(file_list, directory)
+        print "Total accuracy =", accuracy
+        print "Positive precision = %f, positive recall = %f, positive f-measure = %f" % (pos_tuple[0], pos_tuple[1], pos_tuple[2])
+        print "Negative precision = %f, negative recall = %f, negative f-measure = %f" % (neg_tuple[0], neg_tuple[1], neg_tuple[2])
+
 
     if len(sys.argv) == 2 and sys.argv[1] == "-c":
-        average_accuracy = 0
+        total_accuracy = 0
+
+        total_pos_precision = 0
+        total_pos_recall = 0
+        total_pos_f_measure = 0
+
+        total_neg_precision = 0
+        total_neg_recall = 0
+        total_neg_f_measure = 0
+    
         div = int(len(file_list) / 10)
         shuffle(file_list)
         for i in range(10):
@@ -254,9 +298,23 @@ if __name__ == "__main__":
             train_file = train_file + file_list[:i*div]
             test_file = file_list[i*div: i*div + div]
             c = Bayes_Classifier(train_file, directory, True)
-            accuracy = c.calAccuracy(test_file, directory)
-            print "accuracy =", accuracy
-            average_accuracy += accuracy
+
+            accuracy, pos_tuple, neg_tuple = c.calAccuracy(test_file, directory)
+
+            total_pos_precision += pos_tuple[0]
+            total_pos_recall += pos_tuple[1]
+            total_pos_f_measure += pos_tuple[2]
+
+            total_neg_precision += neg_tuple[0]
+            total_neg_recall += neg_tuple[1]
+            total_neg_f_measure += neg_tuple[2]
+
+            print "Total accuracy =", accuracy
+            print "Positive precision = %f, positive recall = %f, positive f-measure = %f" % (pos_tuple[0], pos_tuple[1], pos_tuple[2])
+            print "Negative precision = %f, negative recall = %f, negative f-measure = %f" % (neg_tuple[0], neg_tuple[1], neg_tuple[2])
+            total_accuracy += accuracy
             print "%d seconds passed" % (time.time() - t1)
             print
-        print "average_accuracy =", average_accuracy / 10
+        print "Average accuracy =", total_accuracy / 10
+        print "Average positive precision = %f, average positive recall = %f, average positive f-measure = %f" % (total_pos_precision / 10, total_pos_recall / 10, total_pos_f_measure / 10)
+        print "Average negative precision = %f, average negative recall = %f, average negative f-measure = %f" % (total_neg_precision / 10, total_neg_recall / 10, total_neg_f_measure / 10)
