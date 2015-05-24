@@ -1,6 +1,6 @@
 #!/usr/bin/python
-# Name: 
-# Date:
+# Name: Lijun Tang, Sisi Chen, Yuqing Chen
+# Date: May 24th
 # Description:
 #
 #
