@@ -20,6 +20,9 @@ pa4/test_dir
 # a5 output files
 pa5/a5code/output.txt
 
+# a5 model
+pa5/a5code/model.json
+
 
 # a5 other files
 pa5/2008-07-30

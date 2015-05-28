@@ -5,6 +5,7 @@ import copy
 import guid
 import math
 import os
+import json
 
 # A couple contants
 CONTINUOUS = 0
@@ -13,7 +14,7 @@ DISCRETE = 1
 class HMM:
     ''' Code for a hidden Markov Model '''
 
-    def __init__(self, states, features, contOrDisc, numVals):
+    def __init__(self, states, features, contOrDisc, numVals, isTrained = False):
         ''' Initialize the HMM.
             Input:
                 states: a list of the hidden state possible values
@@ -23,7 +24,7 @@ class HMM:
                 numVals: a dictionary mapping names of discrete features to
                     the number of values that feature can take on. '''
         self.states = states
-        self.isTrained = False
+        self.isTrained = isTrained
         self.featureNames = features
         self.featuresCorD = contOrDisc
         self.numVals = numVals
@@ -33,17 +34,33 @@ class HMM:
         self.emissions = None   #evidence model
         self.transitions = None #transition model
 
-    def train(self, trainingData, trainingLabels):
+    def train(self, trainingData = None, trainingLabels = None):
         ''' Train the HMM on the fully observed data using MLE '''
         print "Training the HMM... "
-        self.isTrained = True
-        self.trainPriors( trainingData, trainingLabels )
-        self.trainTransitions( trainingData, trainingLabels )
-        self.trainEmissions( trainingData, trainingLabels ) 
-        print "HMM trained"
+        if not self.isTrained:
+            print "Training!"
+            self.isTrained = True
+            self.trainPriors( trainingData, trainingLabels )
+            self.trainTransitions( trainingData, trainingLabels )
+            self.trainEmissions( trainingData, trainingLabels ) 
+            print "HMM trained"
+            model = []
+            model.append(self.priors)
+            model.append(self.transitions)
+            model.append(self.emissions)
+            with open("model.json", 'w') as f:
+                json.dump(model, f)
+        else:
+            print "HMM already trained!"
+            with open("model.json") as f:
+                model = json.load(f)
+                self.priors = model[0]
+                self.transitions = model[1]
+                self.emissions = model[2]
         print "Prior probabilities are:", self.priors
         print "Transition model is:", self.transitions
         print "Evidence model is:", self.emissions
+
 
     def trainPriors( self, trainingData, trainingLabels ):
         ''' Train the priors based on the data and labels '''
@@ -138,8 +155,8 @@ class HMM:
             V[0][s] = log(self.priors[s]) + prob
             path[s] = [s]
 
-        print V
-        print path
+        #print V
+        #print path
 
         for t in range(1, len(data)):
             V.append({})
@@ -213,6 +230,10 @@ class StrokeLabeler:
         self.contOrDisc = {'length': DISCRETE}
         self.numFVals = { 'length': 2}
 
+    def confusion(self, trueLabels, classifications):
+        pass
+        
+
     def featurefy( self, strokes ):
         ''' Converts the list of strokes into a list of feature dictionaries
             suitable for the HMM
@@ -270,16 +291,20 @@ class StrokeLabeler:
 
     def trainHMMDir( self, trainingDir ):
         ''' train the HMM on all the files in a training directory '''
-        for fFileObj in os.walk(trainingDir):
-            lFileList = fFileObj[2]
-            break
-        goodList = []
-        for x in lFileList:
-            if not x.startswith('.'):
-                goodList.append(x)
-        
-        tFiles = [ trainingDir + "/" + f for f in goodList ] 
-        self.trainHMM(tFiles)
+        if os.path.exists("model.json"):
+            self.hmm = HMM(self.labels, self.featureNames, self.contOrDisc, self.numFVals, True)
+            self.hmm.train()
+        else:
+            for fFileObj in os.walk(trainingDir):
+                lFileList = fFileObj[2]
+                break
+            goodList = []
+            for x in lFileList:
+                if not x.startswith('.'):
+                    goodList.append(x)
+            
+            tFiles = [ trainingDir + "/" + f for f in goodList ] 
+            self.trainHMM(tFiles)
 
     def featureTest( self, strokeFile ):
         ''' Loads a stroke file and tests the feature functions '''

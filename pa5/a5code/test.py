@@ -15,12 +15,14 @@ data = [{"feeling" : 0}, {"feeling" : 1}, {"feeling" : 2}]
 print hmm.label(data)
 
 
-#x = StrokeLabeler()
-#x.trainHMMDir("./")
-#strokes, labels = x.loadLabeledFile("../trainingFiles/0128_1.6.1.labeled.xml")
+x = StrokeHmm.StrokeLabeler()
 #print strokes
 #print labels
-#x.trainHMMDir("../trainingFiles")
+x.trainHMMDir("../trainingFiles")
 #strokes, labels = x.loadLabeledFile("../trainingFiles/0128_1.6.1.labeled.xml")
+#print
+#print "true labels:"
+#print labels
+#print "fake labels"
 #print x.labelStrokes(strokes)
 
