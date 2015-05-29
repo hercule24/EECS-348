@@ -6,6 +6,7 @@ import guid
 import math
 import os
 import json
+import sys
 
 # A couple contants
 CONTINUOUS = 0
@@ -148,6 +149,8 @@ class HMM:
         ''' Find the most likely labels for the sequence of data
             This is an implementation of the Viterbi algorithm  '''
         # You will implement this function
+        print "labeling"
+        #print "data =", data
         V = [{}]
         path = {}
         for s in self.states:
@@ -155,8 +158,12 @@ class HMM:
             V[0][s] = log(self.priors[s]) + prob
             path[s] = [s]
 
-        #print V
-        #print path
+        #print "V =", V
+        #print "path =", path
+        #(prob, state) = max((V[0][s], s) for s in self.states)
+        #print path[state]
+
+        #print "before the data[1]"
 
         for t in range(1, len(data)):
             V.append({})
@@ -175,11 +182,19 @@ class HMM:
                 V[t][s] = max_prob
                 new_path[s] = path[max_state] + [s]
             path = new_path
+
+        #print "V =", V
+        #print "path =", path
+        #(prob, state) = max((V[2][s], s) for s in self.states)
+        #print path[state]
+        #sys.exit()
         
         n = 0
         if len(data) != 1:
             n = t
         (prob, state) = max((V[n][s], s) for s in self.states)
+        print "after labeling"
+        print
         return (prob, path[state])
 
     
@@ -198,6 +213,7 @@ class HMM:
                 g = g / (sigma * math.sqrt(2*math.pi))
                 prob += log(g)
             if self.featuresCorD[f] == DISCRETE:
+                #print features
                 fval = features[f]
                 prob += log(self.emissions[state][f][fval])
                 
@@ -231,8 +247,25 @@ class StrokeLabeler:
         self.numFVals = { 'length': 2}
 
     def confusion(self, trueLabels, classifications):
-        pass
-        
+        con_dict = {}
+        con_dict["drawing"] = {}
+        con_dict["text"] = {}
+        con_dict["drawing"]["drawing"] = 0
+        con_dict["drawing"]["text"] = 0
+        con_dict["text"]["drawing"] = 0
+        con_dict["text"]["text"] = 0
+        for i in range(len(trueLabels)):
+            if trueLabels[i] == "drawing":
+                if classifications[i] == "drawing":
+                    con_dict["drawing"]["drawing"] += 1
+                else:
+                    con_dict["drawing"]["text"] += 1
+            else:
+                if classifications[i] == "drawing":
+                    con_dict["text"]["drawing"] += 1
+                else:
+                    con_dict["text"]["text"] += 1
+        return con_dict
 
     def featurefy( self, strokes ):
         ''' Converts the list of strokes into a list of feature dictionaries
@@ -260,7 +293,7 @@ class StrokeLabeler:
             # to use a principled approach (i.e., look at the data) rather
             # than just guessing.
             l = s.length()
-            if l < 300:
+            if l < 530:
                 d['length'] = 0
             else:
                 d['length'] = 1
