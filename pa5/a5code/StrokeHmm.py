@@ -555,6 +555,73 @@ class Stroke:
             prev = p
         return ret
 
+    def drawingSpeed( self ):
+        ''' Returns the whole writing time of a stroke '''
+        ret = 0
+        first = self.points[0]
+        totalPoint = len(self.points)
+        last = self.points[totalPoint - 1]
+        # calculate the total time for writing a stroke
+        time  = last[3] - first[3]
+
+        ret = 1.0*self.length()/time
+        return ret
+
+    def strokeBoundary( self ):
+        ''' Returns the boundary points position of bounding box for the stroke '''
+        prev = self.points[0]
+        max_x = prev[0]
+        max_y = prev[1]
+        min_x = prev[0]
+        min_y = prev[1]
+        for p in self.points[1:]:
+            # find out the box boundary for a stroke
+            if p[0] > max_x:
+                max_x = p[0]
+            if p[1] > max_y:
+                max_y = p[1]
+            if p[0] < min_x:
+                min_x = p[0]
+            if p[1] < min_y:
+                min_y = p[1]
+        return max_x, max_y, min_x, min_y
+
+    def strokeBoxHW( self ):
+        ''' Returns the bounding box height and width of a stroke '''
+        max_x, max_y, min_x, min_y = self.strokeBoundary
+        boxHeight = max_y - min_y
+        boxWidth = max_x - min_x
+        return boxHeight, boxWidth
+
+    def boundBoxArea( self ):
+        ''' Returns the bounding box area of the stroke '''
+        h,w = self.strokeBoxHW()
+        return h * w
+
+    def boundBoxHWR( self ):
+        ''' Returns the bounding box height and width radio of the stroke '''
+        h,w = self.strokeBoxHW()
+        return float(h / w)
+
+    def strokeDistInTimeOrder( self, neighbor ):
+        ''' Returns the distance bewteen neighbor stroke
+            The strokes considered to be neighbor according to their time order
+            input: neighbor - a stroke class 
+            distance: calculate according to bounding box center'''
+        smax_x, smax_y, smin_x, smin_y = self.strokeBoundary()
+        sx_box_center = (float(smax_x) + smin_x) / 2
+        sy_box_center = (float(smax_y) + smin_y) / 2 
+
+        nmax_x, nmax_y, nmin_x, nmin_y = neighbor.strokeBoundary()
+        nx_box_center = (float(nmax_x) + nmin_x) / 2
+        ny_box_center = (float(nmax_y) + nmin_y) / 2 
+
+        xdiff = sx_box_center - nx_box_center
+        ydiff = sy_box_center - ny_box_center
+
+        distance = math.sqrt(xdiff**2 + ydiff**2)
+
+        return distance
 
 
     def sumOfCurvature(self, func=lambda x: x, skip=1):
