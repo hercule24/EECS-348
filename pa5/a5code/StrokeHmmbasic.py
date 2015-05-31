@@ -50,8 +50,7 @@ class HMM:
             model.append(self.transitions)
             model.append(self.emissions)
             with open("model.json", 'w') as f:
-                json.dump(model, f, indent = 4)
-
+                json.dump(model, f)
         else:
             print "HMM already trained!"
             with open("model.json") as f:
@@ -243,11 +242,9 @@ class StrokeLabeler:
         #    name to whether it is continuous or discrete
         # numFVals is a dictionary specifying the number of legal values for
         #    each discrete feature
-        self.featureNames = ['length', "speed"]
-        #self.contOrDisc = {'length': DISCRETE}
-        self.contOrDisc = {'length': CONTINUOUS, "speed" : CONTINUOUS}
-        #self.numFVals = { 'length': 2}
-        self.numFVals = {}
+        self.featureNames = ['length']
+        self.contOrDisc = {'length': DISCRETE}
+        self.numFVals = { 'length': 2}
 
     def confusion(self, trueLabels, classifications):
         con_dict = {}
@@ -281,8 +278,7 @@ class StrokeLabeler:
 
             # If we wanted to use length as a continuous feature, we
             # would simply use the following line to set its value
-            d['length'] = s.length()
-            d["speed"] = s.drawingSpeed()
+            #d['length'] = s.length()
 
             # To use it as a discrete feature, we have to "bin" it, that is
             # we define ranges for "short" (<300 units) and "long" (>=300 units)
@@ -296,12 +292,11 @@ class StrokeLabeler:
             # to use.  This is an important process and can be tricky.  Try
             # to use a principled approach (i.e., look at the data) rather
             # than just guessing.
-
-            #l = s.length()
-            #if l < 530:
-            #    d['length'] = 0
-            #else:
-            #    d['length'] = 1
+            l = s.length()
+            if l < 530:
+                d['length'] = 0
+            else:
+                d['length'] = 1
 
             # We can add more features here just by adding them to the dictionary
             # d as we did with length.  Remember that when you add features,
@@ -319,22 +314,11 @@ class StrokeLabeler:
         self.hmm = HMM( self.labels, self.featureNames, self.contOrDisc, self.numFVals )
         allStrokes = []
         allLabels = []
-
-        #allStrokes_1 = []
-        #allLabels_1 = []
-
         for f in trainingFiles:
             print "Loading file", f, "for training"
             strokes, labels = self.loadLabeledFile( f )
             allStrokes.append(strokes)
             allLabels.append(labels)
-
-            #allStrokes_1 += strokes
-            #allLabels_1 += labels
-
-        #self.findMargin(allStrokes_1, allLabels_1)
-        #self.findAverageLength(allStrokes_1, allLabels_1)
-
         allObservations = [self.featurefy(s) for s in allStrokes]
         self.hmm.train(allObservations, allLabels)
 
@@ -364,42 +348,13 @@ class StrokeLabeler:
             print "Label is", labels[i]
             print "Length is", strokes[i].length()
             print "Curvature is", strokes[i].sumOfCurvature(abs)
-
-    def findMargin(self, allStrokes, allLabels):
-        min_drawing_length = float("inf")
-        max_text_length = float("-inf")
-
-        for i in range(len(allStrokes)):
-            if allLabels[i] == "drawing":
-                if allStrokes[i].length() < min_drawing_length:
-                    min_drawing_length = allStrokes[i].length()
-            else:
-                if allStrokes[i].length() > max_text_length:
-                    max_text_length = allStrokes[i].length()
-
-        print "min_drawing_length =", min_drawing_length
-        print "max_text_length =", max_text_length
-
-    def findAverageLength(self, allStrokes, allLabels):
-        total_drawing_length = 0
-        total_text_length = 0
-
-        for i in range(len(allStrokes)):
-            if allLabels[i] == "drawing":
-                total_drawing_length += allStrokes[i].length()
-            else:
-                total_text_length += allStrokes[i].length()
-
-        print "average_drawing_length =", total_drawing_length / len(allStrokes)
-        print "average_text_length =", total_text_length / len(allStrokes)
-
     
     def labelFile( self, strokeFile, outFile ):
         ''' Label the strokes in the file strokeFile and save the labels
             (with the strokes) in the outFile '''
         print "Labeling file", strokeFile
         strokes = self.loadStrokeFile( strokeFile )
-        prob, labels = self.labelStrokes( strokes )
+        labels = self.labelStrokes( strokes )
         print "Labeling done, saving file as", outFile
         self.saveFile( strokes, labels, strokeFile, outFile )
 
@@ -632,80 +587,6 @@ class Stroke:
             ret += math.sqrt(xdiff**2 + ydiff**2)
             prev = p
         return ret
-
-    # Feature added by us
-    def drawingSpeed( self ):
-        ''' Returns the whole writing time of a stroke '''
-        ret = 0
-
-        first = self.points[0]
-        last = self.points[-1]
-        # calculate the total time for writing a stroke
-        time  = last[2] - first[2]
-
-        ret = self.length() / (time + 1)
-        return ret
-
-    # Feature added by us
-    def strokeBoundary( self ):
-        ''' Returns the boundary points position of bounding box for the stroke '''
-        prev = self.points[0]
-        max_x = prev[0]
-        max_y = prev[1]
-        min_x = prev[0]
-        min_y = prev[1]
-        for p in self.points[1:]:
-            # find out the box boundary for a stroke
-            if p[0] > max_x:
-                max_x = p[0]
-            if p[1] > max_y:
-                max_y = p[1]
-            if p[0] < min_x:
-                min_x = p[0]
-            if p[1] < min_y:
-                min_y = p[1]
-        return max_x, max_y, min_x, min_y
-
-    # Feature added by us
-    def strokeBoxHW( self ):
-        ''' Returns the bounding box height and width of a stroke '''
-        max_x, max_y, min_x, min_y = self.strokeBoundary
-        boxHeight = max_y - min_y
-        boxWidth = max_x - min_x
-        return boxHeight, boxWidth
-
-    # Feature added by us
-    def boundBoxArea( self ):
-        ''' Returns the bounding box area of the stroke '''
-        h,w = self.strokeBoxHW()
-        return h * w
-
-    # Feature added by us
-    def boundBoxHWR( self ):
-        ''' Returns the bounding box height and width radio of the stroke '''
-        h,w = self.strokeBoxHW()
-        return float(h / w)
-
-    # Feature added by us
-    def strokeDistInTimeOrder( self, neighbor ):
-        ''' Returns the distance bewteen neighbor stroke
-            The strokes considered to be neighbor according to their time order
-            input: neighbor - a stroke class 
-            distance: calculate according to bounding box center'''
-        smax_x, smax_y, smin_x, smin_y = self.strokeBoundary()
-        sx_box_center = (float(smax_x) + smin_x) / 2
-        sy_box_center = (float(smax_y) + smin_y) / 2 
-
-        nmax_x, nmax_y, nmin_x, nmin_y = neighbor.strokeBoundary()
-        nx_box_center = (float(nmax_x) + nmin_x) / 2
-        ny_box_center = (float(nmax_y) + nmin_y) / 2 
-
-        xdiff = sx_box_center - nx_box_center
-        ydiff = sy_box_center - ny_box_center
-
-        distance = math.sqrt(xdiff**2 + ydiff**2)
-
-        return distance
 
 
     def sumOfCurvature(self, func=lambda x: x, skip=1):

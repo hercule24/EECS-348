@@ -29,3 +29,6 @@ print "fake labels"
 print fake_labels
 print
 print x.confusion(labels, fake_labels)
+
+#x.labelFile("../trainingFiles/0128_1.6.1.labeled.xml", "outfile.xml")
+
