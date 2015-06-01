@@ -21,7 +21,7 @@ pa4/test_dir
 pa5/a5code/output.txt
 
 # a5 model
-pa5/a5code/model.json
+*.json
 
 
 # a5 other files

@@ -49,11 +49,11 @@ class HMM:
             model.append(self.priors)
             model.append(self.transitions)
             model.append(self.emissions)
-            with open("model.json", 'w') as f:
+            with open("model_basic.json", 'w') as f:
                 json.dump(model, f)
         else:
             print "HMM already trained!"
-            with open("model.json") as f:
+            with open("model_basic.json") as f:
                 model = json.load(f)
                 self.priors = model[0]
                 self.transitions = model[1]
@@ -149,52 +149,42 @@ class HMM:
         ''' Find the most likely labels for the sequence of data
             This is an implementation of the Viterbi algorithm  '''
         # You will implement this function
-        print "labeling"
-        #print "data =", data
         V = [{}]
         path = {}
+
+        # process the t = 0 step, which doesn't include the transition model
         for s in self.states:
             prob = self.getEmissionProb(s, data[0])
             V[0][s] = log(self.priors[s]) + prob
             path[s] = [s]
 
-        #print "V =", V
-        #print "path =", path
-        #(prob, state) = max((V[0][s], s) for s in self.states)
-        #print path[state]
-
-        #print "before the data[1]"
-
+        # process the remaining for t >= 1 step
         for t in range(1, len(data)):
             V.append({})
             new_path = {}
             for s in self.states:
                 max_prob = float("-inf")
                 max_state = None
+
+                # iterate all states in the t - 1 step
                 for s0 in self.states:
                     prob = self.getEmissionProb(s, data[t])
-                    #value += V[t-1][s0] + log(self.transitions[s0][s]) + log(self.emissions[s][f][data[t][f]])
                     prob += V[t-1][s0] + log(self.transitions[s0][s])
-                    #print "prob =", prob
                     if prob > max_prob:
                         max_prob = prob
                         max_state = s0
                 V[t][s] = max_prob
                 new_path[s] = path[max_state] + [s]
+
+            # update the path
             path = new_path
 
-        #print "V =", V
-        #print "path =", path
-        #(prob, state) = max((V[2][s], s) for s in self.states)
-        #print path[state]
-        #sys.exit()
-        
         n = 0
         if len(data) != 1:
             n = t
+        # find the state with the largest probability
         (prob, state) = max((V[n][s], s) for s in self.states)
-        print "after labeling"
-        print
+        # find the corresponding path
         return (prob, path[state])
 
     
@@ -293,7 +283,7 @@ class StrokeLabeler:
             # to use a principled approach (i.e., look at the data) rather
             # than just guessing.
             l = s.length()
-            if l < 530:
+            if l < 300:
                 d['length'] = 0
             else:
                 d['length'] = 1
@@ -324,7 +314,7 @@ class StrokeLabeler:
 
     def trainHMMDir( self, trainingDir ):
         ''' train the HMM on all the files in a training directory '''
-        if os.path.exists("model.json"):
+        if os.path.exists("model_basic.json"):
             self.hmm = HMM(self.labels, self.featureNames, self.contOrDisc, self.numFVals, True)
             self.hmm.train()
         else:
@@ -554,6 +544,40 @@ class StrokeLabeler:
             print "PROBLEM: number of strokes and labels must match"
             print "numStrokes is", len(strokes), "numLabels is", len(labels)
         return strokes, labels
+
+    def calRecall(self, trainingDir):
+        con_dict = {}
+        con_dict["drawing"] = {}
+        con_dict["text"] = {}
+        con_dict["drawing"]["drawing"] = 0
+        con_dict["drawing"]["text"] = 0
+        con_dict["text"]["drawing"] = 0
+        con_dict["text"]["text"] = 0
+
+        for fFileObj in os.walk(trainingDir):
+            lFileList = fFileObj[2]
+            break
+        goodList = []
+        for x in lFileList:
+            if not x.startswith('.'):
+                goodList.append(x)
+            
+        tFiles = [ trainingDir + "/" + f for f in goodList ] 
+
+        for f in tFiles:
+            strokes, true_labels = self.loadLabeledFile(f)
+            prob, fake_labels = self.labelStrokes(strokes)
+            temp = self.confusion(true_labels, fake_labels)
+            con_dict["drawing"]["drawing"] += temp["drawing"]["drawing"]
+            con_dict["drawing"]["text"] += temp["drawing"]["text"]
+            con_dict["text"]["drawing"] += temp["text"]["drawing"]
+            con_dict["text"]["text"] += temp["text"]["text"]
+
+        print con_dict
+        drawing_all = con_dict["drawing"]["drawing"] + con_dict["drawing"]["text"]
+        text_all = con_dict["text"]["drawing"] + con_dict["text"]["text"]
+        print "Percent correct of drawing =", con_dict["drawing"]["drawing"] / drawing_all
+        print "Percent correct of text =", con_dict["text"]["text"] / text_all
 
 class Stroke:
     ''' A class to represent a stroke (series of xyt points).

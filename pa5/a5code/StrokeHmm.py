@@ -301,15 +301,50 @@ class StrokeLabeler:
             ret.append(d)  # append the feature dictionary to the list
             
         return ret
+
+    def calRecall(self, trainingDir):
+        con_dict = {}
+        con_dict["drawing"] = {}
+        con_dict["text"] = {}
+        con_dict["drawing"]["drawing"] = 0
+        con_dict["drawing"]["text"] = 0
+        con_dict["text"]["drawing"] = 0
+        con_dict["text"]["text"] = 0
+
+        for fFileObj in os.walk(trainingDir):
+            lFileList = fFileObj[2]
+            break
+        goodList = []
+        for x in lFileList:
+            if not x.startswith('.'):
+                goodList.append(x)
+            
+        tFiles = [ trainingDir + "/" + f for f in goodList ] 
+
+        for f in tFiles:
+            strokes, true_labels = self.loadLabeledFile(f)
+            prob, fake_labels = self.labelStrokes(strokes)
+            temp = self.confusion(true_labels, fake_labels)
+            con_dict["drawing"]["drawing"] += temp["drawing"]["drawing"]
+            con_dict["drawing"]["text"] += temp["drawing"]["text"]
+            con_dict["text"]["drawing"] += temp["text"]["drawing"]
+            con_dict["text"]["text"] += temp["text"]["text"]
+
+        print con_dict
+        drawing_all = con_dict["drawing"]["drawing"] + con_dict["drawing"]["text"]
+        text_all = con_dict["text"]["drawing"] + con_dict["text"]["text"]
+        print "Percent correct of drawing =", con_dict["drawing"]["drawing"] / drawing_all
+        print "Percent correct of text =", con_dict["text"]["text"] / text_all
     
     def trainHMM( self, trainingFiles ):
         ''' Train the HMM '''
         self.hmm = HMM( self.labels, self.featureNames, self.contOrDisc, self.numFVals )
-        allStrokes = []
-        allLabels = []
 
         #allStrokes_1 = []
         #allLabels_1 = []
+
+        allLabels = []
+        allStrokes = []
 
         for f in trainingFiles:
             print "Loading file", f, "for training"
@@ -342,6 +377,7 @@ class StrokeLabeler:
             
             tFiles = [ trainingDir + "/" + f for f in goodList ] 
             self.trainHMM(tFiles)
+
 
     def featureTest( self, strokeFile ):
         ''' Loads a stroke file and tests the feature functions '''
@@ -744,5 +780,4 @@ class Stroke:
         return ret / len(self.points)
 
     # You can (and should) define more features here
-
 

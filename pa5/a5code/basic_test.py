@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import StrokeHmm
+import StrokeHmmbasic
 
 #states = ["Healthy", "Fever"]
 #features = ["feeling"]
@@ -15,7 +15,7 @@ import StrokeHmm
 #print hmm.label(data)
 
 
-x = StrokeHmm.StrokeLabeler()
+x = StrokeHmmbasic.StrokeLabeler()
 #print strokes
 #print labels
 x.trainHMMDir("../trainingFiles")
