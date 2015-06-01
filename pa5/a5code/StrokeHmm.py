@@ -63,7 +63,6 @@ class HMM:
         print "Transition model is:", self.transitions
         print "Evidence model is:", self.emissions
 
-
     def trainPriors( self, trainingData, trainingLabels ):
         ''' Train the priors based on the data and labels '''
         # Set the prior probabilities
@@ -144,58 +143,47 @@ class HMM:
                     # Now we have counts of each feature and we need to normalize
                     for i in range(len(self.emissions[s][f])):
                         self.emissions[s][f][i] /= float(len(featureVals[s][f])+self.numVals[f])
-
               
     def label( self, data ):
         ''' Find the most likely labels for the sequence of data
             This is an implementation of the Viterbi algorithm  '''
         # You will implement this function
-        print "labeling"
-        #print "data =", data
         V = [{}]
         path = {}
+
+        # process the t = 0 step, which doesn't include the transition model
         for s in self.states:
             prob = self.getEmissionProb(s, data[0])
             V[0][s] = log(self.priors[s]) + prob
             path[s] = [s]
 
-        #print "V =", V
-        #print "path =", path
-        #(prob, state) = max((V[0][s], s) for s in self.states)
-        #print path[state]
-
-        #print "before the data[1]"
-
+        # process remaining for t >= 1 step
         for t in range(1, len(data)):
             V.append({})
             new_path = {}
             for s in self.states:
                 max_prob = float("-inf")
                 max_state = None
+
+                # iterate all states in the t - 1 step
                 for s0 in self.states:
                     prob = self.getEmissionProb(s, data[t])
-                    #value += V[t-1][s0] + log(self.transitions[s0][s]) + log(self.emissions[s][f][data[t][f]])
                     prob += V[t-1][s0] + log(self.transitions[s0][s])
-                    #print "prob =", prob
                     if prob > max_prob:
                         max_prob = prob
                         max_state = s0
                 V[t][s] = max_prob
                 new_path[s] = path[max_state] + [s]
+
+            # update the path
             path = new_path
 
-        #print "V =", V
-        #print "path =", path
-        #(prob, state) = max((V[2][s], s) for s in self.states)
-        #print path[state]
-        #sys.exit()
-        
         n = 0
         if len(data) != 1:
             n = t
+        # find the state with the largest probability
         (prob, state) = max((V[n][s], s) for s in self.states)
-        print "after labeling"
-        print
+        # find the corresponding path
         return (prob, path[state])
 
     
@@ -706,7 +694,6 @@ class Stroke:
         distance = math.sqrt(xdiff**2 + ydiff**2)
 
         return distance
-
 
     def sumOfCurvature(self, func=lambda x: x, skip=1):
         ''' Return the normalized sum of curvature for a stroke.
