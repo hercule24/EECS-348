@@ -231,12 +231,10 @@ class StrokeLabeler:
         #    name to whether it is continuous or discrete
         # numFVals is a dictionary specifying the number of legal values for
         #    each discrete feature
-        self.featureNames = ['length', "speed", "bound_box_area", "bound_box_HWR",
-        /"diatance", "curvature"]
+        self.featureNames = ['length', "speed", "bound_box_area", "bound_box_HWR", "diatance", "curvature"]
         #self.contOrDisc = {'length': DISCRETE}
         self.contOrDisc = {'length': CONTINUOUS, "speed" : CONTINUOUS, 
-        /"bound_box_area": CONTINUOUS, "bound_box_HWR": CONTINUOUS, "distance":CONTINUOUS
-        /"curvature": CONTINUOUS}
+        "bound_box_area": CONTINUOUS, "bound_box_HWR": CONTINUOUS, "distance":CONTINUOUS, "curvature": CONTINUOUS}
         #self.numFVals = { 'length': 2}
         self.numFVals = {}
 
