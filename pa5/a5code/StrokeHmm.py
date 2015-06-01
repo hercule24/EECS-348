@@ -231,9 +231,12 @@ class StrokeLabeler:
         #    name to whether it is continuous or discrete
         # numFVals is a dictionary specifying the number of legal values for
         #    each discrete feature
-        self.featureNames = ['length', "speed"]
+        self.featureNames = ['length', "speed", "bound_box_area", "bound_box_HWR",
+        /"diatance", "curvature"]
         #self.contOrDisc = {'length': DISCRETE}
-        self.contOrDisc = {'length': CONTINUOUS, "speed" : CONTINUOUS}
+        self.contOrDisc = {'length': CONTINUOUS, "speed" : CONTINUOUS, 
+        /"bound_box_area": CONTINUOUS, "bound_box_HWR": CONTINUOUS, "distance":CONTINUOUS
+        /"curvature": CONTINUOUS}
         #self.numFVals = { 'length': 2}
         self.numFVals = {}
 
@@ -264,13 +267,20 @@ class StrokeLabeler:
             The names of features used here have to match the names
             passed into the HMM'''
         ret = []
-        for s in strokes:
+        isOrdered = self.verifyStrokeOrder(strokes)
+        for i, s in enumerate(strokes):
             d = {}  # The feature dictionary to be returned for one stroke
 
             # If we wanted to use length as a continuous feature, we
             # would simply use the following line to set its value
             d['length'] = s.length()
             d["speed"] = s.drawingSpeed()
+            d["bound_box_area"] = s.boundBoxArea()
+            d["bound_box_HWR"] = s.boundBoxHWR()
+            if isOrdered and i != 0:
+                neighbor = Strokes[i - 1]
+                d["distance"] = s.strokeDistInTimeOrder(neighbor)
+            d["curvature"] = s.sumOfCurvature()
 
             # To use it as a discrete feature, we have to "bin" it, that is
             # we define ranges for "short" (<300 units) and "long" (>=300 units)
