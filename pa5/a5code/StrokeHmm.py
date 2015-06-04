@@ -144,7 +144,7 @@ class HMM:
                     for i in range(len(self.emissions[s][f])):
                         self.emissions[s][f][i] /= float(len(featureVals[s][f])+self.numVals[f])
               
-    def label( self, data ):
+    def label( self, data, strokes ):
         ''' Find the most likely labels for the sequence of data
             This is an implementation of the Viterbi algorithm  '''
         # You will implement this function
@@ -164,11 +164,17 @@ class HMM:
             for s in self.states:
                 max_prob = float("-inf")
                 max_state = None
-
+                dist = strokes[t].strokeDistInTimeOrder(strokes[t-1])
                 # iterate all states in the t - 1 step
                 for s0 in self.states:
                     prob = self.getEmissionProb(s, data[t])
-                    prob += V[t-1][s0] + log(self.transitions[s0][s])
+                    
+
+                    if dist > 400 and s0 != s:
+                        prob += V[t-1][s0] + log(self.transitions[s0][s]) + 1
+                    else:
+                        prob += V[t-1][s0] + log(self.transitions[s0][s])
+
                     if prob > max_prob:
                         max_prob = prob
                         max_state = s0
@@ -433,7 +439,7 @@ class StrokeLabeler:
             print "HMM must be trained first"
             return []
         strokeFeatures = self.featurefy(strokes)
-        return self.hmm.label(strokeFeatures)
+        return self.hmm.label(strokeFeatures, strokes)
 
     def saveFile( self, strokes, labels, originalFile, outFile ):
         ''' Save the labels of the stroke objects and the stroke objects themselves

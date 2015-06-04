@@ -26,6 +26,7 @@ x.trainHMMDir("../trainingFiles")
 #print
 #prob, fake_labels = x.labelStrokes(strokes)
 #print "fake labels"
+#print prob
 #print fake_labels
 #print
 #print x.confusion(labels, fake_labels)
